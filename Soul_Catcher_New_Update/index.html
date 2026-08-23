@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Soul Catcher</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="uiContainer">
+    <div class="hud-box">SOULS: <span id="scoreVal">0</span> / 30</div>
+    <div class="hud-box medo-credit">DEV <span>M3DO</span></div>
+    <div class="hud-box cooldown-container">
+      <span>SWORD</span>
+      <div class="bar-bg"><div id="cooldownBar"></div></div>
+    </div>
+    <button id="btnPause" class="mobile-top-btn">PAUSE ❚❚</button>
+  </div>
+
+  <div id="touchControls">
+    <div class="dpad">
+      <button id="btnUp" class="dbtn">▲</button>
+      <div class="dpad-mi">
+        <button id="btnLeft" class="dbtn">◄</button>
+
+        <button id="btnRight" class="dbtn">►</button>
+      </div>
+      <button id="btnDown" class="dbtn">▼</button>
+    </div>
+    <button id="btnAttack" class="action-btn">ATTACK ⚔</button>
+  </div>
+
+  <div id="pauseScreen" class="overlay hidden">
+    <div class="card">
+      <h1>GAME PAUSED</h1>
+      <p>Press resume to continue</p>
+      <button id="btnResume" class="btn success-btn">RESUME</button>
+    </div>
+  </div>
+
+  <div id="gameOverScreen" class="overlay hidden">
+    <div class="card">
+      <h1 class="danger">GAME OVER</h1>
+      <p>The dark souls caught you!</p>
+      <p>Final Score: <span id="finalScore">0</span></p>
+      <button id="btnRestart" class="btn">RESTART</button>
+      <div class="card-footer">DEV M3DO</div>
+    </div>
+  </div>
+
+  <div id="winScreen" class="overlay hidden">
+    <div class="card">
+      <h1 class="success">YOU WIN 🎉</h1>
+      <p>You collected 30 souls and saved the realm!</p>
+      <button id="btnWinRestart" class="btn success-btn">PLAY AGAIN</button>
+      <div class="card-footer">DEV M3DO</div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
