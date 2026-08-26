@@ -269,7 +269,7 @@ function spawnSoul() {
 function spawnGhost() {
   let x = Math.random() < 0.5 ? -80 : width + 80;
   let y = Math.random() * height;
-  ghosts.push({ x, y, speed: 1.2 + Math.random() * 0.4, frame: 0, timer: 0 });
+  ghosts.push({ x, y, speed: 2.2 + Math.random() * 0.4, frame: 0, timer: 0 });
 }
 
 function attack() {
