@@ -116,8 +116,7 @@ body, html {
 }
 
 .action-btn:active, .action-btn.active-press,
-.mobile-top-btn:active, .mobile-top-btn.active-press,
-.btn:active {
+.mobile-top-btn:active, .btn:active {
   transform: scale(0.88);
   background: rgba(0, 210, 255, 0.7) !important;
   box-shadow: 0 0 12px #00d2ff;

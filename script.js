@@ -102,7 +102,7 @@ const player = {
   animFrame: 0, animTimer: 0
 };
 
-// 1. الكيبورد للكمبيوتر
+// 1. التحكم للكمبيوتر بالكيبورد (W A S D والأسهم و Space)
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
@@ -112,108 +112,119 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-// 2. الانالوج الديناميكي (يشتغل من أي مكان في الشاشة)
+// 2. نظام Analaog Joystick عائم للموبايل (Touch Native)
 const touchState = { moveX: 0, moveY: 0, active: false };
 let joystickCenter = { x: 0, y: 0 };
-let joystickCurrent = { x: 0, y: 0 };
 let touchId = null;
 
 const joystickElement = document.createElement('div');
-joystickElement.style.position = 'fixed';
-joystickElement.style.width = '90px';
-joystickElement.style.height = '90px';
-joystickElement.style.borderRadius = '50%';
-joystickElement.style.border = '2px solid rgba(0, 210, 255, 0.6)';
-joystickElement.style.background = 'rgba(0, 0, 0, 0.4)';
-joystickElement.style.transform = 'translate(-50%, -50%)';
-joystickElement.style.pointerEvents = 'none';
-joystickElement.style.display = 'none';
-joystickElement.style.zIndex = '999';
+joystickElement.style.cssText = `
+  position: fixed;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 210, 255, 0.8);
+  background: rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  display: none;
+  z-index: 9999;
+`;
 document.body.appendChild(joystickElement);
 
 const thumbElement = document.createElement('div');
-thumbElement.style.position = 'absolute';
-thumbElement.style.width = '45px';
-thumbElement.style.height = '45px';
-thumbElement.style.borderRadius = '50%';
-thumbElement.style.background = 'rgba(0, 210, 255, 0.8)';
-thumbElement.style.boxShadow = '0 0 10px #00d2ff';
-thumbElement.style.top = '22.5px';
-thumbElement.style.left = '22.5px';
+thumbElement.style.cssText = `
+  position: absolute;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #00d2ff;
+  box-shadow: 0 0 12px #00d2ff;
+  top: 22.5px;
+  left: 22.5px;
+  pointer-events: none;
+`;
 joystickElement.appendChild(thumbElement);
 
-window.addEventListener('pointerdown', (e) => {
-  // التجاهل لو الضغط على زرار أو واجهة شاشة
-  if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.overlay')) return;
+window.addEventListener('touchstart', (e) => {
+  const touch = e.changedTouches[0];
+  const target = document.elementFromPoint(touch.clientX, touch.clientY);
   
-  // يظهر الانالوج في مكان الضغطة فوراً (من أي مكان في الشاشة)
+  if (target && (target.tagName === 'BUTTON' || target.closest('button') || target.closest('.overlay'))) {
+    return;
+  }
+
   if (!touchState.active) {
     touchState.active = true;
-    touchId = e.pointerId;
-    joystickCenter = { x: e.clientX, y: e.clientY };
-    joystickCurrent = { x: e.clientX, y: e.clientY };
+    touchId = touch.identifier;
+    joystickCenter = { x: touch.clientX, y: touch.clientY };
     
     joystickElement.style.display = 'block';
-    joystickElement.style.left = e.clientX + 'px';
-    joystickElement.style.top = e.clientY + 'px';
-    thumbElement.style.transform = `translate(0px, 0px)`;
+    joystickElement.style.left = touch.clientX + 'px';
+    joystickElement.style.top = touch.clientY + 'px';
+    thumbElement.style.transform = 'translate(0px, 0px)';
   }
-});
+}, { passive: true });
 
-window.addEventListener('pointermove', (e) => {
-  if (!touchState.active || e.pointerId !== touchId) return;
+window.addEventListener('touchmove', (e) => {
+  if (!touchState.active) return;
   
-  joystickCurrent = { x: e.clientX, y: e.clientY };
-  
-  let dx = joystickCurrent.x - joystickCenter.x;
-  let dy = joystickCurrent.y - joystickCenter.y;
-  let dist = Math.hypot(dx, dy);
-  let maxRadius = 45;
-  
-  if (dist > maxRadius) {
-    dx = (dx / dist) * maxRadius;
-    dy = (dy / dist) * maxRadius;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const touch = e.changedTouches[i];
+    if (touch.identifier === touchId) {
+      let dx = touch.clientX - joystickCenter.x;
+      let dy = touch.clientY - joystickCenter.y;
+      let dist = Math.hypot(dx, dy);
+      let maxRadius = 40;
+      
+      if (dist > maxRadius) {
+        dx = (dx / dist) * maxRadius;
+        dy = (dy / dist) * maxRadius;
+      }
+      
+      thumbElement.style.transform = `translate(${dx}px, ${dy}px)`;
+      touchState.moveX = dx / maxRadius;
+      touchState.moveY = dy / maxRadius;
+      break;
+    }
   }
-  
-  thumbElement.style.transform = `translate(${dx}px, ${dy}px)`;
-  touchState.moveX = dx / maxRadius;
-  touchState.moveY = dy / maxRadius;
-});
+}, { passive: true });
 
-const endTouch = (e) => {
-  if (e.pointerId === touchId) {
-    touchState.active = false;
-    touchState.moveX = 0;
-    touchState.moveY = 0;
-    touchId = null;
-    joystickElement.style.display = 'none';
+const handleTouchEnd = (e) => {
+  if (!touchState.active) return;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === touchId) {
+      touchState.active = false;
+      touchState.moveX = 0;
+      touchState.moveY = 0;
+      touchId = null;
+      joystickElement.style.display = 'none';
+      break;
+    }
   }
 };
 
-window.addEventListener('pointerup', endTouch);
-window.addEventListener('pointercancel', endTouch);
+window.addEventListener('touchend', handleTouchEnd);
+window.addEventListener('touchcancel', handleTouchEnd);
 
+// أزرار الواجهة المباشرة
 const btnAttack = document.getElementById('btnAttack');
 if (btnAttack) {
-  btnAttack.addEventListener('pointerdown', (e) => {
+  btnAttack.addEventListener('touchstart', (e) => {
     e.preventDefault();
     btnAttack.classList.add('active-press');
     attack();
   });
-  btnAttack.addEventListener('pointerup', () => btnAttack.classList.remove('active-press'));
-  btnAttack.addEventListener('pointercancel', () => btnAttack.classList.remove('active-press'));
+  btnAttack.addEventListener('touchend', () => btnAttack.classList.remove('active-press'));
+  btnAttack.addEventListener('click', attack);
 }
 
 const btnPause = document.getElementById('btnPause');
 if (btnPause) {
-  btnPause.addEventListener('pointerdown', (e) => {
+  btnPause.addEventListener('click', (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    btnPause.classList.add('active-press');
     togglePause();
   });
-  btnPause.addEventListener('pointerup', () => btnPause.classList.remove('active-press'));
-  btnPause.addEventListener('pointercancel', () => btnPause.classList.remove('active-press'));
 }
 
 const btnRestart = document.getElementById('btnRestart');
@@ -300,11 +311,13 @@ function update() {
 
   let moveX = 0, moveY = 0;
   
+  // الكيبورد
   if (keys['KeyW'] || keys['ArrowUp']) moveY -= 1;
   if (keys['KeyS'] || keys['ArrowDown']) moveY += 1;
   if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
   if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
 
+  // الأنالوج للموبايل
   if (touchState.active) {
     moveX = touchState.moveX;
     moveY = touchState.moveY;
