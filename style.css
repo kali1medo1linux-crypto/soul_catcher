@@ -94,40 +94,11 @@ body, html {
 #touchControls {
   position: absolute;
   bottom: clamp(15px, 4vh, 35px);
-  left: clamp(15px, 4vw, 35px);
   right: clamp(15px, 4vw, 35px);
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  justify-content: flex-end;
   z-index: 10;
   pointer-events: none;
-}
-
-.dpad {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: auto;
-}
-
-.dpad-mid {
-  display: flex;
-  gap: clamp(4px, 1vw, 10px);
-}
-
-.dbtn {
-  width: clamp(45px, 12vw, 65px);
-  height: clamp(45px, 12vw, 65px);
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  color: white;
-  font-size: clamp(16px, 4vw, 22px);
-  border-radius: 50%;
-  margin: 2px;
-  margin-right: 25px;
-  backdrop-filter: blur(4px);
-  pointer-events: auto;
-  touch-action: none;
 }
 
 .action-btn {
@@ -144,7 +115,6 @@ body, html {
   touch-action: none;
 }
 
-.dbtn:active, .dbtn.active-press,
 .action-btn:active, .action-btn.active-press,
 .mobile-top-btn:active, .mobile-top-btn.active-press,
 .btn:active {

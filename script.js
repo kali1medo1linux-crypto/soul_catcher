@@ -51,6 +51,24 @@ const sources = {
   props: 'images/props.png'
 };
 
+const totalImages = Object.keys(sources).length;
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const loadingScreen = document.getElementById('loadingScreen');
+
+function updateProgress() {
+  loadedCount++;
+  const percent = Math.floor((loadedCount / totalImages) * 100);
+  if (progressBar) progressBar.style.width = percent + '%';
+  if (progressText) progressText.innerText = percent + '%';
+
+  if (loadedCount === totalImages) {
+    if (loadingScreen) loadingScreen.classList.add('hidden');
+    resize();
+    resetGame();
+  }
+}
+
 for (let key in sources) {
   rawImages[key] = new Image();
   rawImages[key].src = sources[key];
@@ -60,11 +78,10 @@ for (let key in sources) {
     } else {
       images[key] = rawImages[key];
     }
-    loadedCount++;
-    if (loadedCount === 5) {
-      resize();
-      resetGame();
-    }
+    updateProgress();
+  };
+  rawImages[key].onerror = () => {
+    updateProgress();
   };
 }
 
@@ -85,6 +102,7 @@ const player = {
   animFrame: 0, animTimer: 0
 };
 
+// 1. الكيبورد للكمبيوتر
 const keys = {};
 window.addEventListener('keydown', e => {
   keys[e.code] = true;
@@ -94,30 +112,86 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-const touchState = { up: false, down: false, left: false, right: false };
+// 2. الانالوج الديناميكي (يشتغل من أي مكان في الشاشة)
+const touchState = { moveX: 0, moveY: 0, active: false };
+let joystickCenter = { x: 0, y: 0 };
+let joystickCurrent = { x: 0, y: 0 };
+let touchId = null;
 
-function bindTouch(id, prop) {
-  const btn = document.getElementById(id);
-  if (!btn) return;
+const joystickElement = document.createElement('div');
+joystickElement.style.position = 'fixed';
+joystickElement.style.width = '90px';
+joystickElement.style.height = '90px';
+joystickElement.style.borderRadius = '50%';
+joystickElement.style.border = '2px solid rgba(0, 210, 255, 0.6)';
+joystickElement.style.background = 'rgba(0, 0, 0, 0.4)';
+joystickElement.style.transform = 'translate(-50%, -50%)';
+joystickElement.style.pointerEvents = 'none';
+joystickElement.style.display = 'none';
+joystickElement.style.zIndex = '999';
+document.body.appendChild(joystickElement);
+
+const thumbElement = document.createElement('div');
+thumbElement.style.position = 'absolute';
+thumbElement.style.width = '45px';
+thumbElement.style.height = '45px';
+thumbElement.style.borderRadius = '50%';
+thumbElement.style.background = 'rgba(0, 210, 255, 0.8)';
+thumbElement.style.boxShadow = '0 0 10px #00d2ff';
+thumbElement.style.top = '22.5px';
+thumbElement.style.left = '22.5px';
+joystickElement.appendChild(thumbElement);
+
+window.addEventListener('pointerdown', (e) => {
+  // التجاهل لو الضغط على زرار أو واجهة شاشة
+  if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.closest('.overlay')) return;
   
-  const startHandler = (e) => {
-    e.preventDefault();
-    touchState[prop] = true;
-    btn.classList.add('active-press');
-  };
-  const endHandler = (e) => {
-    e.preventDefault();
-    touchState[prop] = false;
-    btn.classList.remove('active-press');
-  };
+  // يظهر الانالوج في مكان الضغطة فوراً (من أي مكان في الشاشة)
+  if (!touchState.active) {
+    touchState.active = true;
+    touchId = e.pointerId;
+    joystickCenter = { x: e.clientX, y: e.clientY };
+    joystickCurrent = { x: e.clientX, y: e.clientY };
+    
+    joystickElement.style.display = 'block';
+    joystickElement.style.left = e.clientX + 'px';
+    joystickElement.style.top = e.clientY + 'px';
+    thumbElement.style.transform = `translate(0px, 0px)`;
+  }
+});
 
-  btn.addEventListener('pointerdown', startHandler);
-  btn.addEventListener('pointerup', endHandler);
-  btn.addEventListener('pointercancel', endHandler);
-}
+window.addEventListener('pointermove', (e) => {
+  if (!touchState.active || e.pointerId !== touchId) return;
+  
+  joystickCurrent = { x: e.clientX, y: e.clientY };
+  
+  let dx = joystickCurrent.x - joystickCenter.x;
+  let dy = joystickCurrent.y - joystickCenter.y;
+  let dist = Math.hypot(dx, dy);
+  let maxRadius = 45;
+  
+  if (dist > maxRadius) {
+    dx = (dx / dist) * maxRadius;
+    dy = (dy / dist) * maxRadius;
+  }
+  
+  thumbElement.style.transform = `translate(${dx}px, ${dy}px)`;
+  touchState.moveX = dx / maxRadius;
+  touchState.moveY = dy / maxRadius;
+});
 
-bindTouch('btnUp', 'up'); bindTouch('btnDown', 'down');
-bindTouch('btnLeft', 'left'); bindTouch('btnRight', 'right');
+const endTouch = (e) => {
+  if (e.pointerId === touchId) {
+    touchState.active = false;
+    touchState.moveX = 0;
+    touchState.moveY = 0;
+    touchId = null;
+    joystickElement.style.display = 'none';
+  }
+};
+
+window.addEventListener('pointerup', endTouch);
+window.addEventListener('pointercancel', endTouch);
 
 const btnAttack = document.getElementById('btnAttack');
 if (btnAttack) {
@@ -225,18 +299,27 @@ function update() {
   if (gameOver || gameWin || isPaused) return;
 
   let moveX = 0, moveY = 0;
-  if (keys['KeyW'] || keys['ArrowUp'] || touchState.up) moveY -= 1;
-  if (keys['KeyS'] || keys['ArrowDown'] || touchState.down) moveY += 1;
-  if (keys['KeyA'] || keys['ArrowLeft'] || touchState.left) moveX -= 1;
-  if (keys['KeyD'] || keys['ArrowRight'] || touchState.right) moveX += 1;
+  
+  if (keys['KeyW'] || keys['ArrowUp']) moveY -= 1;
+  if (keys['KeyS'] || keys['ArrowDown']) moveY += 1;
+  if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
+  if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
 
-  player.isMoving = (moveX !== 0 || moveY !== 0);
+  if (touchState.active) {
+    moveX = touchState.moveX;
+    moveY = touchState.moveY;
+  }
+
+  player.isMoving = (Math.abs(moveX) > 0.1 || Math.abs(moveY) > 0.1);
 
   if (player.isMoving) {
-    const len = Math.hypot(moveX, moveY);
-    player.x += (moveX / len) * player.speed;
-    player.y += (moveY / len) * player.speed;
-    if (moveX !== 0) player.facing = moveX > 0 ? 'right' : 'left';
+    let len = Math.hypot(moveX, moveY);
+    if (len > 1) { moveX /= len; moveY /= len; }
+
+    player.x += moveX * player.speed;
+    player.y += moveY * player.speed;
+    
+    if (Math.abs(moveX) > 0.1) player.facing = moveX > 0 ? 'right' : 'left';
 
     player.x = Math.max(40, Math.min(width - 40, player.x));
     player.y = Math.max(40, Math.min(height - 40, player.y));

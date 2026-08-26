@@ -8,6 +8,18 @@
 </head>
 <body>
 
+  <!-- Loading Screen -->
+  <div id="loadingScreen" class="overlay">
+    <div class="card">
+      <h1 style="color: #00d2ff;">SOUL CATCHER</h1>
+      <p>Loading Assets... <span id="progressText">0%</span></p>
+      <div style="width: 200px; height: 10px; background: #333; border-radius: 5px; margin: 0 auto; overflow: hidden; border: 1px solid #555;">
+        <div id="progressBar" style="width: 0%; height: 100%; background: #00d2ff; transition: width 0.1s;"></div>
+      </div>
+      <div class="card-footer" style="margin-top: 15px;">DEV M3DO</div>
+    </div>
+  </div>
+
   <canvas id="gameCanvas"></canvas>
 
   <div id="uiContainer">
@@ -20,16 +32,8 @@
     <button id="btnPause" class="mobile-top-btn">PAUSE ❚❚</button>
   </div>
 
+  <!-- Attack Button Only for Mobile -->
   <div id="touchControls">
-    <div class="dpad">
-      <button id="btnUp" class="dbtn">▲</button>
-      <div class="dpad-mi">
-        <button id="btnLeft" class="dbtn">◄</button>
-
-        <button id="btnRight" class="dbtn">►</button>
-      </div>
-      <button id="btnDown" class="dbtn">▼</button>
-    </div>
     <button id="btnAttack" class="action-btn">ATTACK ⚔</button>
   </div>
 
